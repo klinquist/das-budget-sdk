@@ -79,7 +79,7 @@ const freeToSpendTransaction = await client.assignTransactionToBucket(
 Here's an example of how to use the SDK to monitor transactions and automatically assign them to buckets:
 
 ```typescript
-import { DasBudget } from "das-budget-sdk";
+const DasBudget = require("das-budget-sdk").default;
 
 // Initialize the client
 const client = new DasBudget({
@@ -114,7 +114,9 @@ async function monitorTransactions(rentExpenseId: string) {
   // Look for rent payment transactions
   for (const transaction of transactions) {
     if (
-      transaction.name.toUppserCase().includes("TRANSFER TO ACCT #1973") &&
+      transaction.data.raw_name
+        .toUppserCase()
+        .includes("TRANSFER TO ACCT #1973") &&
       transaction.amount === "900.00"
     ) {
       console.log(`Found rent payment transaction: ${transaction.id}`);
