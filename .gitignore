@@ -1,0 +1,23 @@
+# Client test directory
+/client-test/
+
+# Dependencies
+/node_modules/
+
+# Build output
+/dist/
+
+# Environment files
+.env
+.env.local
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store 
