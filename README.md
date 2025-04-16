@@ -18,26 +18,26 @@ npm install das-budget-sdk
 4. Paste this code to reveal the refresh token:
 
 ```javascript
-indexedDB.open("firebaseLocalStorageDb").onsuccess = function (event) {
-  const db = event.target.result;
-  const transaction = db.transaction("firebaseLocalStorage", "readonly");
-  const store = transaction.objectStore("firebaseLocalStorage");
-  const request = store.getAll();
+indexedDB.open('firebaseLocalStorageDb').onsuccess = function (event) {
+    const db = event.target.result;
+    const transaction = db.transaction('firebaseLocalStorage', 'readonly');
+    const store = transaction.objectStore('firebaseLocalStorage');
+    const request = store.getAll();
 
-  request.onsuccess = function () {
-    const data = request.result[0];
-    console.log("Refresh Token:", data.value.stsTokenManager.refreshToken);
-  };
+    request.onsuccess = function () {
+        const data = request.result[0];
+        console.log('Refresh Token:', data.value.stsTokenManager.refreshToken);
+    };
 };
 ```
 
 ```typescript
-import { DasBudget, FREE_TO_SPEND } from "das-budget-sdk";
+import { DasBudget, FREE_TO_SPEND } from 'das-budget-sdk';
 
 const client = new DasBudget({
-  refreshToken: "your_refresh_token",
-  apiKey: "AIzaSyAidm6Qvd5nsjdSSLmMdc-5RAWjIGv5a7I", //This is the API key the app uses
-  debug: true, // Optional: enables debug logging
+    refreshToken: 'your_refresh_token',
+    apiKey: 'AIzaSyAidm6Qvd5nsjdSSLmMdc-5RAWjIGv5a7I', //This is the API key the app uses
+    debug: true, // Optional: enables debug logging
 });
 
 // Initialize the client
@@ -61,17 +61,23 @@ const vaults = await client.vaults();
 // Get all accounts
 const accounts = await client.getAccounts();
 
-// Assign a transaction to a bucket (note that goals, expenses, and vaults are all buckets)
-const updatedTransaction = await client.assignTransactionToBucket(
-  "transaction_id",
-  "bucket_id"
-);
+// Example: Update a transaction's note
+const transaction = transactions[0];
+await transaction.updateNote('My new note');
 
-// Assign a transaction to Free to Spend
-const freeToSpendTransaction = await client.assignTransactionToBucket(
-  "transaction_id",
-  FREE_TO_SPEND
-);
+// Example: Assign a transaction to a bucket
+await transaction.assignToBucket('bucket_id');
+
+// Example: Assign a transaction to Free to Spend
+await transaction.assignToBucket(FREE_TO_SPEND);
+
+// Example: Get transactions for an account
+const account = accounts[0];
+const accountTransactions = await account.getTransactions();
+
+// Example: Get transactions for a bucket
+const bucket = expenses[0];
+const bucketTransactions = await bucket.getTransactions();
 ```
 
 ## Advanced Example: Monitoring Transactions and Auto-Assigning
@@ -79,68 +85,70 @@ const freeToSpendTransaction = await client.assignTransactionToBucket(
 Here's an example of how to use the SDK to monitor transactions and automatically assign them to buckets:
 
 ```typescript
-const DasBudget = require("das-budget-sdk").default;
+const DasBudget = require('das-budget-sdk').default;
 
 // Initialize the client
 const client = new DasBudget({
-  refreshToken: "your_refresh_token",
-  apiKey: "AIzaSyAidm6Qvd5nsjdSSLmMdc-5RAWjIGv5a7I",
-  debug: true,
+    refreshToken: 'your_refresh_token',
+    apiKey: 'AIzaSyAidm6Qvd5nsjdSSLmMdc-5RAWjIGv5a7I',
+    debug: true,
 });
 
 async function findRentExpense() {
-  await client.initialize();
+    await client.initialize();
 
-  // Get all expenses and find the Rent expense
-  const expenses = await client.expenses();
-  const rentExpense = expenses.find((expense) =>
-    expense.name.toLowerCase().includes("rent")
-  );
+    // Get all expenses and find the Rent expense
+    const expenses = await client.expenses();
+    const rentExpense = expenses.find((expense) =>
+        expense.name.toLowerCase().includes('rent')
+    );
 
-  if (!rentExpense) {
-    console.error("Could not find Rent expense");
-    return null;
-  }
+    if (!rentExpense) {
+        console.error('Could not find Rent expense');
+        return null;
+    }
 
-  console.log(`Found Rent expense with ID: ${rentExpense.id}`);
-  return rentExpense;
+    console.log(`Found Rent expense with ID: ${rentExpense.id}`);
+    return rentExpense;
 }
 
-async function monitorTransactions(rentExpenseId: string) {
-  // Get transactions from the last hour
-  const oneHourAgo = Math.floor(Date.now() / 1000) - 3600;
-  const transactions = await client.transactions({ since: oneHourAgo });
+async function monitorTransactions(rentExpense: Bucket) {
+    // Get transactions from the last hour
+    const oneHourAgo = Math.floor(Date.now() / 1000) - 3600;
+    const transactions = await client.transactions({ since: oneHourAgo });
 
-  // Look for rent payment transactions
-  for (const transaction of transactions) {
-    if (
-      transaction.data.raw_name
-        .toUppserCase()
-        .includes("TRANSFER TO ACCT #1973") &&
-      transaction.amount === "900.00"
-    ) {
-      console.log(`Found rent payment transaction: ${transaction.id}`);
+    // Look for rent payment transactions
+    for (const transaction of transactions) {
+        if (
+            transaction.rawName
+                .toUpperCase()
+                .includes('TRANSFER TO ACCT #1973') &&
+            transaction.amount === '900.00'
+        ) {
+            console.log(`Found rent payment transaction: ${transaction.id}`);
 
-      // Assign the transaction to the Rent expense
-      await client.assignTransactionToBucket(transaction.id, rentExpenseId);
+            // Assign the transaction to the Rent expense
+            await transaction.assignToBucket(rentExpense.id);
 
-      console.log(`Assigned transaction ${transaction.id} to Rent expense`);
+            console.log(
+                `Assigned transaction ${transaction.id} to Rent expense`
+            );
+        }
     }
-  }
 }
 
 // Main function to run the monitoring
 async function main() {
-  const rentExpense = await findRentExpense();
-  if (!rentExpense) return;
+    const rentExpense = await findRentExpense();
+    if (!rentExpense) return;
 
-  // Run the monitoring every hour
-  setInterval(() => {
-    monitorTransactions(rentExpense.id).catch(console.error);
-  }, 3600000); // 3600000 ms = 1 hour
+    // Run the monitoring every hour
+    setInterval(() => {
+        monitorTransactions(rentExpense).catch(console.error);
+    }, 3600000); // 3600000 ms = 1 hour
 
-  // Run immediately on startup
-  await monitorTransactions(rentExpense.id);
+    // Run immediately on startup
+    await monitorTransactions(rentExpense);
 }
 
 // Start the monitoring
@@ -157,9 +165,9 @@ Creates a new DAS Budget client instance.
 
 ```typescript
 interface DasBudgetConfig {
-  refreshToken: string; // Your DAS Budget refresh token
-  apiKey: string; // Your DAS Budget API key
-  debug?: boolean; // Optional: enables debug logging
+    refreshToken: string; // Your DAS Budget refresh token
+    apiKey: string; // Your DAS Budget API key
+    debug?: boolean; // Optional: enables debug logging
 }
 ```
 
@@ -177,7 +185,7 @@ Options:
 
 ```typescript
 interface TransactionsOptions {
-  since?: number; // Optional: Unix timestamp in seconds to filter transactions
+    since?: number; // Optional: Unix timestamp in seconds to filter transactions
 }
 ```
 
@@ -197,128 +205,72 @@ Fetches all vault buckets.
 
 Fetches all linked accounts.
 
-#### `assignTransactionToBucket(transactionId: string, bucketId: string | typeof FREE_TO_SPEND): Promise<Transaction>`
+## Model Classes
 
-Assigns a transaction to a specific bucket or to Free to Spend.
+### `Transaction`
 
-## Data Models
+Represents a transaction in DAS Budget.
 
-### Transaction
+#### Properties
 
-```typescript
-interface Transaction {
-  id: string;
-  created_at: string;
-  updated_at: string;
-  name: string;
-  notes: string | null;
-  user_id: string;
-  bucket_id: string | null;
-  account_id: string;
-  category_id: number;
-  amount: string;
-  pending: boolean;
-  posted_date: string;
-  authorized_date: string;
-  data: {
-    name: string;
-    raw_name: string;
-  };
-  pending_transaction_id: string | null;
-  removed_at: string | null;
-  insufficient_funds: string | null;
-  rounded: string;
-  context_id: string;
-  hidden_at: string | null;
-  logo_url: string | null;
-  amount_adjustment: string;
-  bucket: Bucket | null;
-  category: Category | null;
-  account: Account | null;
-  original_name: string;
-  bucket_spending?: {
-    free_to_spend: string;
-    bucket_activity: string;
-    bucket_name: string;
-  };
-  metadata: {
-    raw_name: string;
-    nice_name: string;
-    merchant_name: string;
-  };
-}
-```
+-   `id`: string
+-   `name`: string
+-   `notes`: string | null
+-   `amount`: string
+-   `bucketId`: string | null
+-   `accountId`: string
+-   `pending`: boolean
+-   `postedDate`: string
+-   `authorizedDate`: string
+-   `rawName`: string
+-   `merchantName`: string
 
-### Bucket (Expense/Goal/Vault)
+#### Methods
 
-```typescript
-interface Bucket {
-  id: string;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  name: string;
-  notes: string;
-  target_amount: string;
-  current_amount: string;
-  schedule: string;
-  schedule_desc: string;
-  schedule_date: string;
-  schedule_next_date: string;
-  recurrence_id: string;
-  funding_schedule_id: string;
-  kind: "expense" | "goal" | "vault";
-  contribution: string;
-  name_clean: string;
-  merchants?: string[];
-  paused: boolean;
-  schedule_timezone: string;
-  context_id: string;
-  removed_at: string | null;
-  color: string;
-  bucket_group_id: string;
-  migrated_at: string;
-  partial_spend: boolean;
-  categories: Category[];
-  funding_schedule: FundingSchedule;
-  transactions: Transaction[] | null;
-  recurrence: Recurrence;
-  bucket_group: BucketGroup;
-  next_contribution: string;
-  off_track: boolean;
-}
-```
+-   `updateNote(note: string): Promise<void>`
+-   `assignToBucket(bucketId: string | typeof FREE_TO_SPEND): Promise<Transaction>`
 
-### Account
+### `Account`
 
-```typescript
-interface Account {
-  id: string;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  item_id: string;
-  name: string;
-  official_name: string;
-  available_balance: string;
-  current_balance: string;
-  type: string;
-  mask: string;
-  active: boolean;
-  original_name: string;
-  original_type: string;
-  limit_balance: string;
-  removed_at: string | null;
-  context_id: string;
-  deleted_at: string | null;
-  item: AccountItem;
-  context: AccountContext | null;
-  last_sync: string;
-  spendable: boolean;
-  is_owner: boolean;
-  enabled_for_sub: boolean;
-}
-```
+Represents a linked account in DAS Budget.
+
+#### Properties
+
+-   `id`: string
+-   `name`: string
+-   `officialName`: string
+-   `availableBalance`: string
+-   `currentBalance`: string
+-   `type`: string
+-   `mask`: string
+-   `active`: boolean
+-   `spendable`: boolean
+-   `isOwner`: boolean
+
+#### Methods
+
+-   `getTransactions(options?: { since?: number }): Promise<Transaction[]>`
+
+### `Bucket`
+
+Represents a bucket (expense, goal, or vault) in DAS Budget.
+
+#### Properties
+
+-   `id`: string
+-   `name`: string
+-   `notes`: string
+-   `targetAmount`: string
+-   `currentAmount`: string
+-   `kind`: "expense" | "goal" | "vault"
+-   `contribution`: string
+-   `paused`: boolean
+-   `offTrack`: boolean
+
+#### Methods
+
+-   `updateNote(note: string): Promise<void>`
+-   `getTransactions(): Promise<Transaction[]>`
 
 ## Constants
 
@@ -327,10 +279,10 @@ interface Account {
 A constant representing the Free to Spend bucket. Use this when assigning transactions to Free to Spend:
 
 ```typescript
-import { FREE_TO_SPEND } from "das-budget-sdk";
+import { FREE_TO_SPEND } from 'das-budget-sdk';
 
 // Assign a transaction to Free to Spend
-await client.assignTransactionToBucket("transaction_id", FREE_TO_SPEND);
+await transaction.assignToBucket(FREE_TO_SPEND);
 ```
 
 ## Error Handling
