@@ -212,7 +212,7 @@ interface BucketGroup {
   notes: string | null;
 }
 
-interface Expense {
+interface Bucket {
   id: string;
   created_at: string;
   updated_at: string;
@@ -248,98 +248,34 @@ interface Expense {
   off_track: boolean;
 }
 
-interface ExpensesResponse {
-  page: number;
-  limit: number;
-  total: number;
-  items: Expense[];
-}
-
-interface Bucket {
-  id: string;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  name: string;
-  notes: string;
-  target_amount: string;
-  current_amount: string;
-  schedule: string;
-  schedule_desc: string;
-  schedule_date: string;
-  schedule_next_date: string;
-  recurrence_id: string;
-  funding_schedule_id: string;
-  kind: "expense" | "goal" | "vault";
-  contribution: string;
-  name_clean: string;
-  merchants?: string[];
-  paused: boolean;
-  schedule_timezone: string;
-  context_id: string;
-  removed_at: string | null;
-  color: string;
-  bucket_group_id: string;
-  migrated_at: string;
-  partial_spend: boolean;
-  categories: Category[];
-  funding_schedule: {
-    id: string;
-    created_at: string;
-    updated_at: string;
-    name: string;
-    user_id: string;
-    schedule: string;
-    schedule_desc: string;
-    schedule_date: string;
-    schedule_next_date: string;
-    last_executed: string;
-    schedule_timezone: string;
-    context_id: string;
-    paused_at: string | null;
-    removed_at: string | null;
-    name_clean: string;
-    bucket_id: string | null;
-  };
-  transactions: Transaction[] | null;
-  recurrence: {
-    id: string;
-    created_at: string;
-    updated_at: string;
-    user_id: string;
-    last_fund_date: string;
-    next_fund_date: string;
-    missed_contributions: number;
-    total_contributions: number;
-    total_contribution_amount: string;
-    context_id: string;
-  };
-  bucket_group: {
-    id: string;
-    created_at: string;
-    updated_at: string;
-    removed_at: string | null;
-    user_id: string;
-    context_id: string;
-    emoji: string;
-    name: string;
-    name_clean: string;
-    kind: string;
-    sync_color: boolean;
-    color: string;
-    position: number;
-    notes: string | null;
-  };
-  next_contribution: string;
-  off_track: boolean;
-}
-
 interface AccountsResponse {
   page: number;
   limit: number;
   total: number;
   items: Account[];
   has_subscription: boolean;
+}
+
+interface ItemRefresh {
+  id: string;
+  institution_name: string;
+  institution_logo: string;
+  refresh_cost: number;
+  can_refresh: boolean;
+  last_provider_sync: string;
+  last_das_sync: string;
+}
+
+interface RefreshesResponse {
+  premium_rolling_days: number;
+  premium_rolling_credits: number;
+  has_premium_refreshes: boolean;
+  premium_upsell: string;
+  next_credits: string[];
+  credit_balance: number;
+  refresh_balance: number;
+  can_manage_refreshes: boolean;
+  item_refreshes: ItemRefresh[];
 }
 
 export const FREE_TO_SPEND = "FREE_TO_SPEND";
@@ -391,10 +327,11 @@ export default class DasBudget {
   }
 
   private async ensureValidToken(): Promise<void> {
+    const FIVE_MINUTES = 300000; // Get new token if within 5 minutes of expiry
     if (
       !this.accessToken ||
       !this.tokenExpiry ||
-      Date.now() >= this.tokenExpiry
+      Date.now() >= this.tokenExpiry - FIVE_MINUTES
     ) {
       await this.refreshAccessToken();
     }
@@ -612,6 +549,53 @@ export default class DasBudget {
       return response.data.items;
     } catch (error) {
       this.log("Error fetching accounts");
+      throw error;
+    }
+  }
+
+  public async refreshes(): Promise<RefreshesResponse> {
+    await this.ensureValidToken();
+    this.log("Fetching refresh information...");
+
+    try {
+      const response = await axios.get<RefreshesResponse>(
+        `${this.baseUrl}/api/item/refreshes`,
+        {
+          headers: this.getHeaders(),
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      this.log("Error fetching refresh information");
+      throw error;
+    }
+  }
+
+  public async refresh(
+    accountId: string,
+    usePremium: boolean = false
+  ): Promise<void> {
+    await this.ensureValidToken();
+    this.log(`Refreshing account ${accountId}...`);
+
+    try {
+      await axios.post(
+        `${this.baseUrl}/api/item/${accountId}/refresh`,
+        {
+          use_premium: usePremium,
+          idempotency_key: crypto.randomUUID(),
+          user_initiated: true,
+        },
+        {
+          headers: {
+            ...this.getHeaders(),
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    } catch (error) {
+      this.log("Error refreshing account");
       throw error;
     }
   }
