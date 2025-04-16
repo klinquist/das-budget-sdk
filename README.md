@@ -152,7 +152,7 @@ async function monitorTransactions(timeSince) {
 async function main() {
   //Run the monitoring every hour
   setInterval(() => {
-    const ONE_HOUR_AGO = Math.floor(Date.now() / 1000) - 3801;
+    const ONE_HOUR_AGO = Math.floor(Date.now() / 1000) - 3600;
     monitorTransactions(ONE_HOUR_AGO).catch(console.error);
   }, 3600000); // 1 hour
 
