@@ -31,6 +31,8 @@ indexedDB.open("firebaseLocalStorageDb").onsuccess = function (event) {
 };
 ```
 
+### Writing Code
+
 ```typescript
 import { DasBudget, FREE_TO_SPEND } from "das-budget-sdk";
 
@@ -61,6 +63,15 @@ const vaults = await client.vaults();
 // Get all accounts
 const accounts = await client.getAccounts();
 
+// Get refresh information
+const refreshes = await client.refreshes();
+
+// Refresh an account's data
+await client.refresh("account_id");
+
+// Or use a premium refresh
+await client.refresh("account_id", true);
+
 // Assign a transaction to a bucket (note that goals, expenses, and vaults are all buckets)
 const updatedTransaction = await client.assignTransactionToBucket(
   "transaction_id",
@@ -78,69 +89,75 @@ const freeToSpendTransaction = await client.assignTransactionToBucket(
 
 Here's an example of how to use the SDK to monitor transactions and automatically assign them to buckets:
 
-```typescript
+```javascript
+require("dotenv").config();
 const DasBudget = require("das-budget-sdk").default;
+
+const log = (message) => {
+  const date = new Date();
+  const pacificTime = date.toLocaleString("en-US", {
+    timeZone: "America/Los_Angeles",
+  });
+  console.log(`${pacificTime} ${message}`);
+};
+
+const expenseMappings = [
+  {
+    name_contains: "VENMO",
+    friendly_name: "Housekeeping",
+    amount_between_min: 50,
+    amount_between_max: 50,
+    bucket_id: "XXXXXXXXXX",
+  },
+];
 
 // Initialize the client
 const client = new DasBudget({
-  refreshToken: "your_refresh_token",
+  refreshToken: process.env.REFRESH_TOKEN,
   apiKey: "***REMOVED***",
-  debug: true,
+  debug: false,
 });
 
-async function findRentExpense() {
-  await client.initialize();
+const ONE_DAY_AGO = Math.floor(Date.now() / 1000) - 86400;
 
-  // Get all expenses and find the Rent expense
-  const expenses = await client.expenses();
-  const rentExpense = expenses.find((expense) =>
-    expense.name.toLowerCase().includes("rent")
-  );
-
-  if (!rentExpense) {
-    console.error("Could not find Rent expense");
-    return null;
-  }
-
-  console.log(`Found Rent expense with ID: ${rentExpense.id}`);
-  return rentExpense;
-}
-
-async function monitorTransactions(rentExpenseId: string) {
+async function monitorTransactions(timeSince) {
   // Get transactions from the last hour
-  const oneHourAgo = Math.floor(Date.now() / 1000) - 3600;
-  const transactions = await client.transactions({ since: oneHourAgo });
+  const transactions = await client.transactions({ since: timeSince });
 
-  // Look for rent payment transactions
+  //Look for rent payment transactions
   for (const transaction of transactions) {
-    if (
-      transaction.data.raw_name
-        .toUppserCase()
-        .includes("TRANSFER TO ACCT #1973") &&
-      transaction.amount === "900.00"
-    ) {
-      console.log(`Found rent payment transaction: ${transaction.id}`);
-
-      // Assign the transaction to the Rent expense
-      await client.assignTransactionToBucket(transaction.id, rentExpenseId);
-
-      console.log(`Assigned transaction ${transaction.id} to Rent expense`);
-    }
+    log(`Evaluating transaction "${transaction.data.raw_name}"`);
+    expenseMappings.forEach(async (expenseMapping) => {
+      if (
+        transaction.data.raw_name
+          .toUpperCase()
+          .includes(expenseMapping.name_contains.toUpperCase()) &&
+        Number(transaction.amount) >= expenseMapping.amount_between_min &&
+        Number(transaction.amount) <= expenseMapping.amount_between_max &&
+        transaction.bucket_id === null
+      ) {
+        await client.assignTransactionToBucket(
+          transaction.id,
+          expenseMapping.bucket_id
+        );
+        log(
+          `Assigned transaction ${transaction.id} to ${expenseMapping.friendly_name}`
+        );
+      }
+    });
   }
 }
 
 // Main function to run the monitoring
 async function main() {
-  const rentExpense = await findRentExpense();
-  if (!rentExpense) return;
-
-  // Run the monitoring every hour
+  //Run the monitoring every hour
   setInterval(() => {
-    monitorTransactions(rentExpense.id).catch(console.error);
-  }, 3600000); // 3600000 ms = 1 hour
+    const ONE_HOUR_AGO = Math.floor(Date.now() / 1000) - 3801;
+    monitorTransactions(ONE_HOUR_AGO).catch(console.error);
+  }, 3600000); // 1 hour
 
-  // Run immediately on startup
-  await monitorTransactions(rentExpense.id);
+  //Run immediately on startup
+  await monitorTransactions(ONE_DAY_AGO);
 }
 
 // Start the monitoring
@@ -196,6 +213,43 @@ Fetches all vault buckets.
 #### `getAccounts(): Promise<Account[]>`
 
 Fetches all linked accounts.
+
+#### `refreshes(): Promise<RefreshesResponse>`
+
+Fetches refresh information including credit balance, next available credits, and item refresh status.
+
+Returns:
+
+```typescript
+interface RefreshesResponse {
+  premium_rolling_days: number;
+  premium_rolling_credits: number;
+  has_premium_refreshes: boolean;
+  premium_upsell: string;
+  next_credits: string[];
+  credit_balance: number;
+  refresh_balance: number;
+  can_manage_refreshes: boolean;
+  item_refreshes: Array<{
+    id: string;
+    institution_name: string;
+    institution_logo: string;
+    refresh_cost: number;
+    can_refresh: boolean;
+    last_provider_sync: string;
+    last_das_sync: string;
+  }>;
+}
+```
+
+#### `refresh(accountId: string, usePremium: boolean = false): Promise<void>`
+
+Refreshes the data for a specific account. This will trigger a sync with the account's institution.
+
+Parameters:
+
+- `accountId`: The ID of the account to refresh
+- `usePremium`: Optional. If true, will use a premium refresh credit. Defaults to false.
 
 #### `assignTransactionToBucket(transactionId: string, bucketId: string | typeof FREE_TO_SPEND): Promise<Transaction>`
 
