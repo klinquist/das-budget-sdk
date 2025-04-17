@@ -16,6 +16,8 @@ import {
     TransactionsResponse,
     AccountsResponse,
     RefreshOptions,
+    AccountItem,
+    ItemsResponse,
 } from './types';
 
 export default class DasBudget {
@@ -334,7 +336,7 @@ export default class DasBudget {
      * Refreshes the data for a specific account.
      *
      * @param options - The refresh options
-     * @param options.accountId - The ID of the account to refresh (required)
+     * @param options.itemId - The ID of the item to refresh (required)
      * @param options.usePremium - Whether to use premium refresh credits (optional, defaults to false)
      * @param options.budgetId - The ID of the budget to use (optional, defaults to the currently set budget)
      *
@@ -348,20 +350,20 @@ export default class DasBudget {
      *
      * // Using premium refresh
      * await dasBudget.refresh({
-     *   accountId: "account-123",
+     *   itemId: "account-123",
      *   usePremium: true,
      *   budgetId: "budget-456"
      * });
      * ```
      */
     public async refresh(options: RefreshOptions): Promise<void> {
-        if (!options?.accountId) {
+        if (!options?.itemId) {
             throw new Error('accountId is required for refresh');
         }
 
         if (
-            typeof options.accountId !== 'string' ||
-            options.accountId.trim() === ''
+            typeof options.itemId !== 'string' ||
+            options.itemId.trim() === ''
         ) {
             throw new Error('accountId must be a non-empty string');
         }
@@ -382,28 +384,18 @@ export default class DasBudget {
         }
 
         await this.ensureValidToken();
-        this.log(`Refreshing account ${options.accountId}...`);
+        this.log(`Refreshing item ${options.itemId}...`);
 
         try {
             await axios.post(
-                `${this.baseUrl}/api/item/${options.accountId}/refresh`,
+                `${this.baseUrl}/api/item/${options.itemId}/refresh`,
                 {
                     use_premium: options.usePremium ?? false,
                     idempotency_key: crypto.randomUUID(),
                     user_initiated: true,
                 },
                 {
-                    headers: {
-                        ...this.getHeaders(options),
-                        'Content-Type': 'application/json',
-                        'Sec-Fetch-Site': 'same-site',
-                        'Accept-Language': 'en-US,en;q=0.9',
-                        'Sec-Fetch-Mode': 'cors',
-                        'Sec-Fetch-Dest': 'empty',
-                        Priority: 'u=3, i',
-                        'User-Agent':
-                            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15',
-                    },
+                    headers: this.getHeaders(),
                 }
             );
         } catch (error) {
@@ -427,6 +419,25 @@ export default class DasBudget {
             return response.data.items;
         } catch (error) {
             this.log('Error fetching budgets');
+            throw error;
+        }
+    }
+
+    public async items(options?: ApiOptions): Promise<AccountItem[]> {
+        await this.ensureValidToken();
+        this.log('Fetching items...');
+
+        try {
+            const response = await axios.get<ItemsResponse>(
+                `${this.baseUrl}/api/item`,
+                {
+                    headers: this.getHeaders(options),
+                }
+            );
+
+            return response.data.items;
+        } catch (error) {
+            this.log('Error fetching items');
             throw error;
         }
     }

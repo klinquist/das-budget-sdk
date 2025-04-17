@@ -69,20 +69,18 @@ const vaults = await client.vaults();
 // Get all accounts (will use the set budget ID)
 const accounts = await client.accounts();
 
+// Get all items (financial institutions) (will use the set budget ID). Note that an item is a concept thatcan contain one or more accounts.
+const items = await client.items();
+
 // Get refresh information (will use the set budget ID)
 const refreshes = await client.refreshes();
 
-// Get budget information
-const budgetsInfo = await client.budgets();
-console.log(`Free to spend: ${budgetsInfo[0].context_summary.free_to_spend}`);
-console.log(`Total expenses: ${budgetsInfo[0].context_summary.expenses}`);
-
 // Refresh an account's data (will use the set budget ID)
-await client.refresh({ accountId: 'account_id' });
+await client.refresh({ itemId: 'itemId' });
 
 // Or use a premium refresh (will use the set budget ID)
 await client.refresh({
-    accountId: 'account_id',
+    itemId: 'item_id',
     usePremium: true,
 });
 
@@ -305,6 +303,36 @@ Options:
 interface ApiOptions {
     budgetId?: string; // Optional: ID of the budget context to use
 }
+```
+
+#### `items(options?: ApiOptions): Promise<AccountItem[]>`
+
+Fetches all linked items (financial institutions). Each item contains information about the institution and its connection status.
+
+Options:
+
+```typescript
+interface ApiOptions {
+    budgetId?: string; // Optional: ID of the budget context to use
+}
+```
+
+Returns an array of `AccountItem` objects, which include:
+
+-   Institution information (name, logo, status)
+-   Connection details (last sync, sync status)
+-   Associated accounts
+-   Refresh capabilities
+
+Example:
+
+```typescript
+const items = await client.items();
+items.forEach((item) => {
+    console.log(`Institution: ${item.institution_name}`);
+    console.log(`Last sync: ${item.last_sync}`);
+    console.log(`Can refresh: ${item.can_refresh}`);
+});
 ```
 
 #### `refreshes(options?: ApiOptions): Promise<RefreshesResponse>`

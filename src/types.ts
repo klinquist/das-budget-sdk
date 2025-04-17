@@ -367,6 +367,14 @@ export interface ApiOptions {
 }
 
 export interface RefreshOptions extends ApiOptions {
-    accountId: string;
+    itemId: string;
     usePremium?: boolean;
+}
+
+export interface ItemsResponse {
+    page: number;
+    limit: number;
+    total: number;
+    items: AccountItem[];
+    has_subscription: boolean;
 }
