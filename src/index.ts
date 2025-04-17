@@ -20,6 +20,8 @@ import {
     ItemsResponse,
 } from './types';
 
+const { version } = require('../package.json');
+
 export default class DasBudget {
     private refreshToken: string;
     private apiKey: string;
@@ -96,6 +98,7 @@ export default class DasBudget {
             'X-Das-Platform': 'web',
             'X-Das-Build': '179',
             'X-Das-Version': '0.9.5',
+            'User-Agent': `klinquist/das-budget-sdk/${version}`,
         };
     }
 
