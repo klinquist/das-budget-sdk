@@ -20,6 +20,7 @@ import {
     ItemsResponse,
 } from './types';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version } = require('../package.json');
 
 export default class DasBudget {
