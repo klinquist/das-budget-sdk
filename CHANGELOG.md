@@ -1,3 +1,7 @@
+### 1.1.7
+
+-   Fixed eslint errors
+
 ### 1.1.6
 
 -   Include custom user-agent in requests
