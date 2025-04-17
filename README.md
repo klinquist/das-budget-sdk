@@ -45,44 +45,63 @@ const client = new DasBudget({
 // Initialize the client
 await client.initialize();
 
-// Get all transactions
+// Get all budgets
+const budgets = await client.budgets();
+
+// Set a default budget ID for all future API calls
+client.setBudgetId(budgets[0].id);
+
+// Get all transactions (will use the set budget ID)
 const transactions = await client.transactions();
 
 // Get transactions since a specific timestamp (in seconds since epoch)
 const recentTransactions = await client.transactions({ since: 1744334993 });
 
-// Get all expenses
+// Get all expenses (will use the set budget ID)
 const expenses = await client.expenses();
 
-// Get all goals
+// Get all goals (will use the set budget ID)
 const goals = await client.goals();
 
-// Get all vaults
+// Get all vaults (will use the set budget ID)
 const vaults = await client.vaults();
 
-// Get all accounts
-const accounts = await client.getAccounts();
+// Get all accounts (will use the set budget ID)
+const accounts = await client.accounts();
 
-// Get refresh information
+// Get refresh information (will use the set budget ID)
 const refreshes = await client.refreshes();
 
-// Refresh an account's data
+// Get budget information
+const budgetsInfo = await client.budgets();
+console.log(`Free to spend: ${budgetsInfo[0].context_summary.free_to_spend}`);
+console.log(`Total expenses: ${budgetsInfo[0].context_summary.expenses}`);
+
+// Refresh an account's data (will use the set budget ID)
 await client.refresh("account_id");
 
-// Or use a premium refresh
+// Or use a premium refresh (will use the set budget ID)
 await client.refresh("account_id", true);
 
-// Assign a transaction to a bucket (note that goals, expenses, and vaults are all buckets)
-const updatedTransaction = await client.assignTransactionToBucket(
-  "transaction_id",
-  "bucket_id"
-);
+// Assign a transaction to a bucket (will use the set budget ID)
+const updatedTransaction = await client.assignTransactionToBucket({
+  transactionId: "transaction_id",
+  bucketId: "bucket_id",
+});
 
-// Assign a transaction to Free to Spend
-const freeToSpendTransaction = await client.assignTransactionToBucket(
-  "transaction_id",
-  FREE_TO_SPEND
-);
+// Assign a transaction to Free to Spend (will use the set budget ID)
+const freeToSpendTransaction = await client.assignTransactionToBucket({
+  transactionId: "transaction_id",
+  bucketId: FREE_TO_SPEND,
+});
+
+// You can still override the budget ID for individual calls if needed
+const otherBudgetTransactions = await client.transactions({
+  budgetId: "other_budget_id",
+});
+
+// Clear the default budget ID to go back to using the oldest budget
+client.setBudgetId(null);
 ```
 
 ## Advanced Example: Monitoring Transactions and Auto-Assigning
@@ -186,6 +205,35 @@ interface DasBudgetConfig {
 
 Initializes the client by fetching an access token. This is called automatically when needed, but you can call it explicitly to ensure the client is ready.
 
+#### `setBudgetId(budgetId: string | null): void`
+
+Sets the budget ID to use for all future API calls. If not set, the oldest budget will be used by default. Most accounts only have one budget, so this is usually what you want.
+
+Parameters:
+
+- `budgetId`: The ID of the budget to use, or `null` to clear the setting and use the oldest budget
+
+Example:
+
+```typescript
+// Get all budgets
+const budgets = await client.budgets();
+
+// Set a default budget ID for all future API calls
+client.setBudgetId(budgets[0].id);
+
+// All subsequent API calls will use this budget ID
+const transactions = await client.transactions();
+
+// You can still override the budget ID for individual calls
+const otherBudgetTransactions = await client.transactions({
+  budgetId: "other_budget_id",
+});
+
+// Clear the default budget ID
+client.setBudgetId(null);
+```
+
 #### `transactions(options?: TransactionsOptions): Promise<Transaction[]>`
 
 Fetches transactions from your accounts.
@@ -195,54 +243,79 @@ Options:
 ```typescript
 interface TransactionsOptions {
   since?: number; // Optional: Unix timestamp in seconds to filter transactions
+  budgetId?: string; // Optional: ID of the budget context to use
 }
 ```
 
-#### `expenses(): Promise<Bucket[]>`
+#### `expenses(options?: ApiOptions): Promise<Bucket[]>`
 
 Fetches all expense buckets.
 
-#### `goals(): Promise<Bucket[]>`
-
-Fetches all goal buckets.
-
-#### `vaults(): Promise<Bucket[]>`
-
-Fetches all vault buckets.
-
-#### `getAccounts(): Promise<Account[]>`
-
-Fetches all linked accounts.
-
-#### `refreshes(): Promise<RefreshesResponse>`
-
-Fetches refresh information including credit balance, next available credits, and item refresh status.
-
-Returns:
+Options:
 
 ```typescript
-interface RefreshesResponse {
-  premium_rolling_days: number;
-  premium_rolling_credits: number;
-  has_premium_refreshes: boolean;
-  premium_upsell: string;
-  next_credits: string[];
-  credit_balance: number;
-  refresh_balance: number;
-  can_manage_refreshes: boolean;
-  item_refreshes: Array<{
-    id: string;
-    institution_name: string;
-    institution_logo: string;
-    refresh_cost: number;
-    can_refresh: boolean;
-    last_provider_sync: string;
-    last_das_sync: string;
-  }>;
+interface ApiOptions {
+  budgetId?: string; // Optional: ID of the budget context to use
 }
 ```
 
-#### `refresh(accountId: string, usePremium: boolean = false): Promise<void>`
+#### `goals(options?: ApiOptions): Promise<Bucket[]>`
+
+Fetches all goal buckets.
+
+Options:
+
+```typescript
+interface ApiOptions {
+  budgetId?: string; // Optional: ID of the budget context to use
+}
+```
+
+#### `vaults(options?: ApiOptions): Promise<Bucket[]>`
+
+Fetches all vault buckets.
+
+Options:
+
+```typescript
+interface ApiOptions {
+  budgetId?: string; // Optional: ID of the budget context to use
+}
+```
+
+#### `accounts(options?: ApiOptions): Promise<Account[]>`
+
+Fetches all linked accounts.
+
+Options:
+
+```typescript
+interface ApiOptions {
+  budgetId?: string; // Optional: ID of the budget context to use
+}
+```
+
+#### `refreshes(options?: ApiOptions): Promise<RefreshesResponse>`
+
+Fetches refresh information including credit balance, next available credits, and item refresh status.
+
+Options:
+
+```typescript
+interface ApiOptions {
+  budgetId?: string; // Optional: ID of the budget context to use
+}
+```
+
+#### `budgets(): Promise<Budget[]>`
+
+Fetches all budgets in your account. This method does not accept a `budgetId` parameter since it's used to get all available budgets.
+
+Returns an array of `Budget` objects, where the first budget (index 0) is typically your oldest/primary budget.
+
+Note: For all other API methods, if you don't specify a `budgetId`, it will use your oldest budget by default. Most accounts only have one budget, so this is usually what you want.
+
+#### `refresh(accountId: string, usePremium: boolean = false, options?: ApiOptions): Promise<void>`
 
 Refreshes the data for a specific account. This will trigger a sync with the account's institution.
 
@@ -250,10 +323,29 @@ Parameters:
 
 - `accountId`: The ID of the account to refresh
 - `usePremium`: Optional. If true, will use a premium refresh credit. Defaults to false.
+- `options`: Optional. Additional options including budgetId.
 
-#### `assignTransactionToBucket(transactionId: string, bucketId: string | typeof FREE_TO_SPEND): Promise<Transaction>`
+Options:
+
+```typescript
+interface ApiOptions {
+  budgetId?: string; // Optional: ID of the budget context to use
+}
+```
+
+#### `assignTransactionToBucket(options: AssignTransactionOptions): Promise<Transaction>`
 
 Assigns a transaction to a specific bucket or to Free to Spend.
+
+Options:
+
+```typescript
+interface AssignTransactionOptions {
+  transactionId: string; // The ID of the transaction to assign
+  bucketId: string | typeof FREE_TO_SPEND; // The ID of the bucket to assign to, or FREE_TO_SPEND
+  budgetId?: string; // Optional: ID of the budget context to use
+}
+```
 
 ## Data Models
 
