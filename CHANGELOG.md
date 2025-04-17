@@ -1,3 +1,7 @@
+### 1.1.1
+
+- Fixed bug (ts not compiled)
+
 ### 1.1.0
 
 - Added `budgetId` parameter to all API calls
