@@ -1,3 +1,7 @@
+### 1.1.6
+
+-   Include custom user-agent in requests
+
 ### 1.1.5
 
 -   Added `items` method to get all linked items (financial institutions)
