@@ -1,3 +1,7 @@
+### 1.1.8
+
+-   Fixed `refresh` log
+
 ### 1.1.7
 
 -   Fixed eslint errors
