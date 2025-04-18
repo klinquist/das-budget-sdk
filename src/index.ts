@@ -350,11 +350,11 @@ export default class DasBudget {
      * @example
      * ```typescript
      * // Basic usage
-     * await dasBudget.refresh({ accountId: "account-123" });
+     * await dasBudget.refresh({ itemId: "account-123" });
      *
      * // Using premium refresh
      * await dasBudget.refresh({
-     *   itemId: "account-123",
+     *   itemId: "item-123",
      *   usePremium: true,
      *   budgetId: "budget-456"
      * });
@@ -362,14 +362,14 @@ export default class DasBudget {
      */
     public async refresh(options: RefreshOptions): Promise<void> {
         if (!options?.itemId) {
-            throw new Error('accountId is required for refresh');
+            throw new Error('itemId is required for refresh');
         }
 
         if (
             typeof options.itemId !== 'string' ||
             options.itemId.trim() === ''
         ) {
-            throw new Error('accountId must be a non-empty string');
+            throw new Error('itemId must be a non-empty string');
         }
 
         if (
