@@ -1,3 +1,7 @@
+### 1.1.9
+
+-   Included 'crypto' module to fix refresh error
+
 ### 1.1.8
 
 -   Fixed `refresh` log
