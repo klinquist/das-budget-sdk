@@ -4,7 +4,7 @@ async function main() {
   try {
     const db = new DasBudget({
       refreshToken: "your_refresh_token",
-      apiKey: "***REMOVED***",
+      apiKey: process.env.API_KEY,
       debug: true,
     });
 

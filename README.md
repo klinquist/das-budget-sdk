@@ -38,7 +38,7 @@ import { DasBudget, FREE_TO_SPEND } from "das-budget-sdk";
 
 const client = new DasBudget({
   refreshToken: "your_refresh_token",
-  apiKey: "***REMOVED***", //This is the API key the app uses
+  apiKey: process.env.API_KEY, //This is the API key the app uses
   debug: true, // Optional: enables debug logging
 });
 
