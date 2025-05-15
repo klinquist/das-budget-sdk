@@ -18,28 +18,28 @@ npm install das-budget-sdk
 4. Paste this code to reveal the refresh token:
 
 ```javascript
-indexedDB.open('firebaseLocalStorageDb').onsuccess = function (event) {
-    const db = event.target.result;
-    const transaction = db.transaction('firebaseLocalStorage', 'readonly');
-    const store = transaction.objectStore('firebaseLocalStorage');
-    const request = store.getAll();
+indexedDB.open("firebaseLocalStorageDb").onsuccess = function (event) {
+  const db = event.target.result;
+  const transaction = db.transaction("firebaseLocalStorage", "readonly");
+  const store = transaction.objectStore("firebaseLocalStorage");
+  const request = store.getAll();
 
-    request.onsuccess = function () {
-        const data = request.result[0];
-        console.log('Refresh Token:', data.value.stsTokenManager.refreshToken);
-    };
+  request.onsuccess = function () {
+    const data = request.result[0];
+    console.log("Refresh Token:", data.value.stsTokenManager.refreshToken);
+  };
 };
 ```
 
 ### Writing Code
 
 ```typescript
-import { DasBudget, FREE_TO_SPEND } from 'das-budget-sdk';
+import { DasBudget, FREE_TO_SPEND } from "das-budget-sdk";
 
 const client = new DasBudget({
-    refreshToken: 'your_refresh_token',
-    apiKey: '***REMOVED***', //This is the API key the app uses
-    debug: true, // Optional: enables debug logging
+  refreshToken: "your_refresh_token",
+  apiKey: "***REMOVED***", //This is the API key the app uses
+  debug: true, // Optional: enables debug logging
 });
 
 // Initialize the client
@@ -76,36 +76,36 @@ const items = await client.items();
 const refreshes = await client.refreshes();
 
 // Refresh an account's data (will use the set budget ID)
-await client.refresh({ itemId: 'itemId' });
+await client.refresh({ itemId: "itemId" });
 
 // Or use a premium refresh (will use the set budget ID)
 await client.refresh({
-    itemId: 'item_id',
-    usePremium: true,
+  itemId: "item_id",
+  usePremium: true,
 });
 
 // Or specify a different budget ID for this refresh
 await client.refresh({
-    accountId: 'account_id',
-    usePremium: true,
-    budgetId: 'other_budget_id',
+  accountId: "account_id",
+  usePremium: true,
+  budgetId: "other_budget_id",
 });
 
 // Assign a transaction to a bucket (will use the set budget ID)
 const updatedTransaction = await client.assignTransactionToBucket({
-    transactionId: 'transaction_id',
-    bucketId: 'bucket_id',
+  transactionId: "transaction_id",
+  bucketId: "bucket_id",
 });
 
 // Assign a transaction to Free to Spend (will use the set budget ID)
 const freeToSpendTransaction = await client.assignTransactionToBucket({
-    transactionId: 'transaction_id',
-    bucketId: FREE_TO_SPEND,
+  transactionId: "transaction_id",
+  bucketId: FREE_TO_SPEND,
 });
 
 // You can still override the budget ID for individual calls if needed
 const otherBudgetTransactions = await client.transactions({
-    budgetId: 'other_budget_id',
+  budgetId: "other_budget_id",
 });
 
 // Clear the default budget ID to go back to using the oldest budget
@@ -117,76 +117,74 @@ client.setBudgetId(null);
 Here's an example of how to use the SDK to monitor transactions and automatically assign them to buckets:
 
 ```javascript
-require('dotenv').config();
-const DasBudget = require('das-budget-sdk').default;
+require("dotenv").config();
+const DasBudget = require("das-budget-sdk").default;
 
 const log = (message) => {
-    const date = new Date();
-    const pacificTime = date.toLocaleString('en-US', {
-        timeZone: 'America/Los_Angeles',
-    });
-    console.log(`${pacificTime} ${message}`);
+  const date = new Date();
+  const pacificTime = date.toLocaleString("en-US", {
+    timeZone: "America/Los_Angeles",
+  });
+  console.log(`${pacificTime} ${message}`);
 };
 
 const expenseMappings = [
-    {
-        name_contains: 'VENMO',
-        friendly_name: 'Housekeeping',
-        amount_between_min: 50,
-        amount_between_max: 50,
-        bucket_id: 'XXXXXXXXXX',
-    },
+  {
+    name_contains: "VENMO",
+    friendly_name: "Housekeeping",
+    amount_between_min: 50,
+    amount_between_max: 50,
+    bucket_id: "XXXXXXXXXX",
+  },
 ];
 
 // Initialize the client
 const client = new DasBudget({
-    refreshToken: process.env.REFRESH_TOKEN,
-    apiKey: '***REMOVED***',
-    debug: false,
+  refreshToken: process.env.REFRESH_TOKEN,
+  apiKey: process.env.API_KEY,
+  debug: false,
 });
 
 const ONE_DAY_AGO = Math.floor(Date.now() / 1000) - 86400;
 
 async function monitorTransactions(timeSince) {
-    // Get transactions from the last hour
-    const transactions = await client.transactions({ since: timeSince });
+  // Get transactions from the last hour
+  const transactions = await client.transactions({ since: timeSince });
 
-    //Look for rent payment transactions
-    for (const transaction of transactions) {
-        log(`Evaluating transaction "${transaction.data.raw_name}"`);
-        expenseMappings.forEach(async (expenseMapping) => {
-            if (
-                transaction.data.raw_name
-                    .toUpperCase()
-                    .includes(expenseMapping.name_contains.toUpperCase()) &&
-                Number(transaction.amount) >=
-                    expenseMapping.amount_between_min &&
-                Number(transaction.amount) <=
-                    expenseMapping.amount_between_max &&
-                transaction.bucket_id === null
-            ) {
-                await client.assignTransactionToBucket(
-                    transaction.id,
-                    expenseMapping.bucket_id
-                );
-                log(
-                    `Assigned transaction ${transaction.id} to ${expenseMapping.friendly_name}`
-                );
-            }
+  //Look for rent payment transactions
+  for (const transaction of transactions) {
+    log(`Evaluating transaction "${transaction.data.raw_name}"`);
+    expenseMappings.forEach(async (expenseMapping) => {
+      if (
+        transaction.data.raw_name
+          .toUpperCase()
+          .includes(expenseMapping.name_contains.toUpperCase()) &&
+        Number(transaction.amount) >= expenseMapping.amount_between_min &&
+        Number(transaction.amount) <= expenseMapping.amount_between_max &&
+        transaction.bucket_id === null
+      ) {
+        await client.assignTransactionToBucket({
+          transactionId: transaction.id,
+          bucketId: expenseMapping.bucket_id,
         });
-    }
+        log(
+          `Assigned transaction ${transaction.id} to ${expenseMapping.friendly_name}`
+        );
+      }
+    });
+  }
 }
 
 // Main function to run the monitoring
 async function main() {
-    //Run the monitoring every hour
-    setInterval(() => {
-        const ONE_HOUR_AGO = Math.floor(Date.now() / 1000) - 3600;
-        monitorTransactions(ONE_HOUR_AGO).catch(console.error);
-    }, 3600000); // 1 hour
+  //Run the monitoring every hour
+  setInterval(() => {
+    const ONE_HOUR_AGO = Math.floor(Date.now() / 1000) - 3600;
+    monitorTransactions(ONE_HOUR_AGO).catch(console.error);
+  }, 3600000); // 1 hour
 
-    //Run immediately on startup
-    await monitorTransactions(ONE_DAY_AGO);
+  //Run immediately on startup
+  await monitorTransactions(ONE_DAY_AGO);
 }
 
 // Start the monitoring
@@ -203,9 +201,9 @@ Creates a new DAS Budget client instance.
 
 ```typescript
 interface DasBudgetConfig {
-    refreshToken: string; // Your DAS Budget refresh token
-    apiKey: string; // Your DAS Budget API key
-    debug?: boolean; // Optional: enables debug logging
+  refreshToken: string; // Your DAS Budget refresh token
+  apiKey: string; // Your DAS Budget API key
+  debug?: boolean; // Optional: enables debug logging
 }
 ```
 
@@ -221,7 +219,7 @@ Sets the budget ID to use for all future API calls. If not set, the oldest budge
 
 Parameters:
 
--   `budgetId`: The ID of the budget to use, or `null` to clear the setting and use the oldest budget
+- `budgetId`: The ID of the budget to use, or `null` to clear the setting and use the oldest budget
 
 Example:
 
@@ -237,7 +235,7 @@ const transactions = await client.transactions();
 
 // You can still override the budget ID for individual calls
 const otherBudgetTransactions = await client.transactions({
-    budgetId: 'other_budget_id',
+  budgetId: "other_budget_id",
 });
 
 // Clear the default budget ID
@@ -252,8 +250,8 @@ Options:
 
 ```typescript
 interface TransactionsOptions {
-    since?: number; // Optional: Unix timestamp in seconds to filter transactions
-    budgetId?: string; // Optional: ID of the budget context to use
+  since?: number; // Optional: Unix timestamp in seconds to filter transactions
+  budgetId?: string; // Optional: ID of the budget context to use
 }
 ```
 
@@ -265,7 +263,7 @@ Options:
 
 ```typescript
 interface ApiOptions {
-    budgetId?: string; // Optional: ID of the budget context to use
+  budgetId?: string; // Optional: ID of the budget context to use
 }
 ```
 
@@ -277,7 +275,7 @@ Options:
 
 ```typescript
 interface ApiOptions {
-    budgetId?: string; // Optional: ID of the budget context to use
+  budgetId?: string; // Optional: ID of the budget context to use
 }
 ```
 
@@ -289,7 +287,7 @@ Options:
 
 ```typescript
 interface ApiOptions {
-    budgetId?: string; // Optional: ID of the budget context to use
+  budgetId?: string; // Optional: ID of the budget context to use
 }
 ```
 
@@ -301,7 +299,7 @@ Options:
 
 ```typescript
 interface ApiOptions {
-    budgetId?: string; // Optional: ID of the budget context to use
+  budgetId?: string; // Optional: ID of the budget context to use
 }
 ```
 
@@ -313,25 +311,25 @@ Options:
 
 ```typescript
 interface ApiOptions {
-    budgetId?: string; // Optional: ID of the budget context to use
+  budgetId?: string; // Optional: ID of the budget context to use
 }
 ```
 
 Returns an array of `AccountItem` objects, which include:
 
--   Institution information (name, logo, status)
--   Connection details (last sync, sync status)
--   Associated accounts
--   Refresh capabilities
+- Institution information (name, logo, status)
+- Connection details (last sync, sync status)
+- Associated accounts
+- Refresh capabilities
 
 Example:
 
 ```typescript
 const items = await client.items();
 items.forEach((item) => {
-    console.log(`Institution: ${item.institution_name}`);
-    console.log(`Last sync: ${item.last_sync}`);
-    console.log(`Can refresh: ${item.can_refresh}`);
+  console.log(`Institution: ${item.institution_name}`);
+  console.log(`Last sync: ${item.last_sync}`);
+  console.log(`Can refresh: ${item.can_refresh}`);
 });
 ```
 
@@ -343,7 +341,7 @@ Options:
 
 ```typescript
 interface ApiOptions {
-    budgetId?: string; // Optional: ID of the budget context to use
+  budgetId?: string; // Optional: ID of the budget context to use
 }
 ```
 
@@ -361,15 +359,15 @@ Refreshes the data for a specific account. This will trigger a sync with the acc
 
 Parameters:
 
--   `accountId`: The ID of the account to refresh
--   `usePremium`: Optional. If true, will use a premium refresh credit. Defaults to false.
--   `options`: Optional. Additional options including budgetId.
+- `accountId`: The ID of the account to refresh
+- `usePremium`: Optional. If true, will use a premium refresh credit. Defaults to false.
+- `options`: Optional. Additional options including budgetId.
 
 Options:
 
 ```typescript
 interface ApiOptions {
-    budgetId?: string; // Optional: ID of the budget context to use
+  budgetId?: string; // Optional: ID of the budget context to use
 }
 ```
 
@@ -381,9 +379,9 @@ Options:
 
 ```typescript
 interface AssignTransactionOptions {
-    transactionId: string; // The ID of the transaction to assign
-    bucketId: string | typeof FREE_TO_SPEND; // The ID of the bucket to assign to, or FREE_TO_SPEND
-    budgetId?: string; // Optional: ID of the budget context to use
+  transactionId: string; // The ID of the transaction to assign
+  bucketId: string | typeof FREE_TO_SPEND; // The ID of the bucket to assign to, or FREE_TO_SPEND
+  budgetId?: string; // Optional: ID of the budget context to use
 }
 ```
 
@@ -393,45 +391,45 @@ interface AssignTransactionOptions {
 
 ```typescript
 interface Transaction {
-    id: string;
-    created_at: string;
-    updated_at: string;
+  id: string;
+  created_at: string;
+  updated_at: string;
+  name: string;
+  notes: string | null;
+  user_id: string;
+  bucket_id: string | null;
+  account_id: string;
+  category_id: number;
+  amount: string;
+  pending: boolean;
+  posted_date: string;
+  authorized_date: string;
+  data: {
     name: string;
-    notes: string | null;
-    user_id: string;
-    bucket_id: string | null;
-    account_id: string;
-    category_id: number;
-    amount: string;
-    pending: boolean;
-    posted_date: string;
-    authorized_date: string;
-    data: {
-        name: string;
-        raw_name: string;
-    };
-    pending_transaction_id: string | null;
-    removed_at: string | null;
-    insufficient_funds: string | null;
-    rounded: string;
-    context_id: string;
-    hidden_at: string | null;
-    logo_url: string | null;
-    amount_adjustment: string;
-    bucket: Bucket | null;
-    category: Category | null;
-    account: Account | null;
-    original_name: string;
-    bucket_spending?: {
-        free_to_spend: string;
-        bucket_activity: string;
-        bucket_name: string;
-    };
-    metadata: {
-        raw_name: string;
-        nice_name: string;
-        merchant_name: string;
-    };
+    raw_name: string;
+  };
+  pending_transaction_id: string | null;
+  removed_at: string | null;
+  insufficient_funds: string | null;
+  rounded: string;
+  context_id: string;
+  hidden_at: string | null;
+  logo_url: string | null;
+  amount_adjustment: string;
+  bucket: Bucket | null;
+  category: Category | null;
+  account: Account | null;
+  original_name: string;
+  bucket_spending?: {
+    free_to_spend: string;
+    bucket_activity: string;
+    bucket_name: string;
+  };
+  metadata: {
+    raw_name: string;
+    nice_name: string;
+    merchant_name: string;
+  };
 }
 ```
 
@@ -439,39 +437,39 @@ interface Transaction {
 
 ```typescript
 interface Bucket {
-    id: string;
-    created_at: string;
-    updated_at: string;
-    user_id: string;
-    name: string;
-    notes: string;
-    target_amount: string;
-    current_amount: string;
-    schedule: string;
-    schedule_desc: string;
-    schedule_date: string;
-    schedule_next_date: string;
-    recurrence_id: string;
-    funding_schedule_id: string;
-    kind: 'expense' | 'goal' | 'vault';
-    contribution: string;
-    name_clean: string;
-    merchants?: string[];
-    paused: boolean;
-    schedule_timezone: string;
-    context_id: string;
-    removed_at: string | null;
-    color: string;
-    bucket_group_id: string;
-    migrated_at: string;
-    partial_spend: boolean;
-    categories: Category[];
-    funding_schedule: FundingSchedule;
-    transactions: Transaction[] | null;
-    recurrence: Recurrence;
-    bucket_group: BucketGroup;
-    next_contribution: string;
-    off_track: boolean;
+  id: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  name: string;
+  notes: string;
+  target_amount: string;
+  current_amount: string;
+  schedule: string;
+  schedule_desc: string;
+  schedule_date: string;
+  schedule_next_date: string;
+  recurrence_id: string;
+  funding_schedule_id: string;
+  kind: "expense" | "goal" | "vault";
+  contribution: string;
+  name_clean: string;
+  merchants?: string[];
+  paused: boolean;
+  schedule_timezone: string;
+  context_id: string;
+  removed_at: string | null;
+  color: string;
+  bucket_group_id: string;
+  migrated_at: string;
+  partial_spend: boolean;
+  categories: Category[];
+  funding_schedule: FundingSchedule;
+  transactions: Transaction[] | null;
+  recurrence: Recurrence;
+  bucket_group: BucketGroup;
+  next_contribution: string;
+  off_track: boolean;
 }
 ```
 
@@ -479,30 +477,30 @@ interface Bucket {
 
 ```typescript
 interface Account {
-    id: string;
-    created_at: string;
-    updated_at: string;
-    user_id: string;
-    item_id: string;
-    name: string;
-    official_name: string;
-    available_balance: string;
-    current_balance: string;
-    type: string;
-    mask: string;
-    active: boolean;
-    original_name: string;
-    original_type: string;
-    limit_balance: string;
-    removed_at: string | null;
-    context_id: string;
-    deleted_at: string | null;
-    item: AccountItem;
-    context: AccountContext | null;
-    last_sync: string;
-    spendable: boolean;
-    is_owner: boolean;
-    enabled_for_sub: boolean;
+  id: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  item_id: string;
+  name: string;
+  official_name: string;
+  available_balance: string;
+  current_balance: string;
+  type: string;
+  mask: string;
+  active: boolean;
+  original_name: string;
+  original_type: string;
+  limit_balance: string;
+  removed_at: string | null;
+  context_id: string;
+  deleted_at: string | null;
+  item: AccountItem;
+  context: AccountContext | null;
+  last_sync: string;
+  spendable: boolean;
+  is_owner: boolean;
+  enabled_for_sub: boolean;
 }
 ```
 
@@ -513,10 +511,10 @@ interface Account {
 A constant representing the Free to Spend bucket. Use this when assigning transactions to Free to Spend:
 
 ```typescript
-import { FREE_TO_SPEND } from 'das-budget-sdk';
+import { FREE_TO_SPEND } from "das-budget-sdk";
 
 // Assign a transaction to Free to Spend
-await client.assignTransactionToBucket('transaction_id', FREE_TO_SPEND);
+await client.assignTransactionToBucket("transaction_id", FREE_TO_SPEND);
 ```
 
 ## Error Handling
