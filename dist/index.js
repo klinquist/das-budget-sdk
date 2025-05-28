@@ -3,15 +3,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.FREE_TO_SPEND = void 0;
 const axios_1 = __importDefault(require("axios"));
+const crypto_1 = require("crypto");
 const types_1 = require("./types");
+var types_2 = require("./types");
+Object.defineProperty(exports, "FREE_TO_SPEND", { enumerable: true, get: function () { return types_2.FREE_TO_SPEND; } });
 class DasBudget {
     constructor(config) {
         this.accessToken = null;
         this.tokenExpiry = null;
         this.userId = null;
         this.budgetId = null;
-        this.baseUrl = "https://api.dasbudget.com";
+        this.baseUrl = 'https://api.dasbudget.com';
         this.refreshToken = config.refreshToken;
         this.apiKey = config.apiKey;
         this.debug = config.debug || false;
@@ -23,18 +27,18 @@ class DasBudget {
     }
     async refreshAccessToken() {
         try {
-            this.log("Refreshing access token...");
+            this.log('Refreshing access token...');
             const response = await axios_1.default.post(`https://securetoken.googleapis.com/v1/token?key=${this.apiKey}`, {
-                grant_type: "refresh_token",
+                grant_type: 'refresh_token',
                 refresh_token: this.refreshToken,
             });
             this.accessToken = response.data.access_token;
             this.tokenExpiry = Date.now() + response.data.expires_in * 1000;
             this.userId = response.data.user_id;
-            this.log("Access token refreshed successfully");
+            this.log('Access token refreshed successfully');
         }
         catch (error) {
-            this.log("Error refreshing access token");
+            this.log('Error refreshing access token');
             throw error;
         }
     }
@@ -53,35 +57,35 @@ class DasBudget {
      */
     setBudgetId(budgetId) {
         this.budgetId = budgetId;
-        this.log(`Set budget ID to: ${budgetId ?? "null"}`);
+        this.log(`Set budget ID to: ${budgetId ?? 'null'}`);
     }
     getHeaders(options) {
         return {
             Authorization: `Bearer ${this.accessToken}`,
-            Accept: "*/*",
-            "Cache-Control": "no-cache",
-            Pragma: "no-cache",
-            Origin: "https://app.dasbudget.com",
-            Referer: "https://app.dasbudget.com/",
-            "X-Das-Context-Id": options?.budgetId ?? this.budgetId ?? "null",
-            "X-Das-Platform": "web",
-            "X-Das-Build": "179",
-            "X-Das-Version": "0.9.5",
+            Accept: '*/*',
+            'Cache-Control': 'no-cache',
+            Pragma: 'no-cache',
+            Origin: 'https://app.dasbudget.com',
+            Referer: 'https://app.dasbudget.com/',
+            'X-Das-Context-Id': options?.budgetId ?? this.budgetId ?? 'null',
+            'X-Das-Platform': 'web',
+            'X-Das-Build': '179',
+            'X-Das-Version': '0.9.5',
         };
     }
     async initialize() {
-        this.log("Initializing SDK...");
+        this.log('Initializing SDK...');
         await this.refreshAccessToken();
-        this.log("SDK initialized successfully");
+        this.log('SDK initialized successfully');
     }
     async transactions(options) {
         await this.ensureValidToken();
-        this.log("Fetching transactions...");
+        this.log('Fetching transactions...');
         const since = options?.since;
         if (since !== undefined) {
             // Validate the since parameter
-            if (typeof since !== "number" || isNaN(since)) {
-                throw new Error("since parameter must be a valid number (seconds since epoch)");
+            if (typeof since !== 'number' || isNaN(since)) {
+                throw new Error('since parameter must be a valid number (seconds since epoch)');
             }
             // Log the since value in different formats for debugging
             this.log(`since parameter value: ${since}`);
@@ -100,9 +104,11 @@ class DasBudget {
                     params: {
                         page: currentPage,
                         limit,
-                        types: "checking,credit card",
+                        types: 'checking,credit card',
                     },
-                    headers: this.getHeaders({ budgetId: options?.budgetId }),
+                    headers: this.getHeaders({
+                        budgetId: options?.budgetId,
+                    }),
                 });
                 const { transactions, total } = response.data;
                 this.log(`API Response - Page: ${currentPage}, Total: ${total}, Fetched: ${transactions.length}`);
@@ -121,8 +127,9 @@ class DasBudget {
                     // Only stop pagination if we got no transactions in this page
                     // or if we got fewer transactions than the limit and none of them match our filter
                     if (transactions.length === 0 ||
-                        (transactions.length < limit && filteredTransactions.length === 0)) {
-                        this.log("Reached end of transactions - no more matching transactions found");
+                        (transactions.length < limit &&
+                            filteredTransactions.length === 0)) {
+                        this.log('Reached end of transactions - no more matching transactions found');
                         hasMorePages = false;
                     }
                     else {
@@ -132,12 +139,12 @@ class DasBudget {
                 }
                 else {
                     // If no since parameter, just return the first page
-                    this.log("No since parameter provided, returning first page only");
+                    this.log('No since parameter provided, returning first page only');
                     return transactions;
                 }
             }
             catch (error) {
-                this.log("Error fetching transactions");
+                this.log('Error fetching transactions');
                 throw error;
             }
         }
@@ -153,7 +160,7 @@ class DasBudget {
                     page: 1,
                     limit: 1000,
                     kind,
-                    sort: "schedule_date,name_clean",
+                    sort: 'schedule_date,name_clean',
                 },
                 headers: this.getHeaders(options),
             });
@@ -165,28 +172,28 @@ class DasBudget {
         }
     }
     async expenses(options) {
-        return this.getBucketsByKind("expense", options);
+        return this.getBucketsByKind('expense', options);
     }
     async goals(options) {
-        return this.getBucketsByKind("goal", options);
+        return this.getBucketsByKind('goal', options);
     }
     async vaults(options) {
-        return this.getBucketsByKind("vault", options);
+        return this.getBucketsByKind('vault', options);
     }
     async accounts(options) {
         await this.ensureValidToken();
-        this.log("Fetching accounts...");
+        this.log('Fetching accounts...');
         try {
             const response = await axios_1.default.get(`${this.baseUrl}/api/item/account`, {
                 params: {
-                    types: "checking,credit card",
+                    types: 'checking,credit card',
                 },
                 headers: this.getHeaders(options),
             });
             return response.data.items;
         }
         catch (error) {
-            this.log("Error fetching accounts");
+            this.log('Error fetching accounts');
             throw error;
         }
     }
@@ -194,20 +201,20 @@ class DasBudget {
         await this.ensureValidToken();
         this.log(`Assigning transaction ${options.transactionId} to bucket ${options.bucketId}...`);
         try {
-            const actualBucketId = options.bucketId === types_1.FREE_TO_SPEND ? "fts" : options.bucketId;
+            const actualBucketId = options.bucketId === types_1.FREE_TO_SPEND ? 'fts' : options.bucketId;
             const response = await axios_1.default.post(`${this.baseUrl}/api/item/swap/${options.transactionId}/${actualBucketId}`, {}, {
                 headers: this.getHeaders({ budgetId: options.budgetId }),
             });
             return response.data;
         }
         catch (error) {
-            this.log("Error assigning transaction to bucket");
+            this.log('Error assigning transaction to bucket');
             throw error;
         }
     }
     async refreshes(options) {
         await this.ensureValidToken();
-        this.log("Fetching refresh information...");
+        this.log('Fetching refresh information...');
         try {
             const response = await axios_1.default.get(`${this.baseUrl}/api/item/refreshes`, {
                 headers: this.getHeaders(options),
@@ -215,7 +222,7 @@ class DasBudget {
             return response.data;
         }
         catch (error) {
-            this.log("Error fetching refresh information");
+            this.log('Error fetching refresh information');
             throw error;
         }
     }
@@ -225,23 +232,23 @@ class DasBudget {
         try {
             await axios_1.default.post(`${this.baseUrl}/api/item/${accountId}/refresh`, {
                 use_premium: usePremium,
-                idempotency_key: crypto.randomUUID(),
+                idempotency_key: (0, crypto_1.randomUUID)(),
                 user_initiated: true,
             }, {
                 headers: {
                     ...this.getHeaders(options),
-                    "Content-Type": "application/json",
+                    'Content-Type': 'application/json',
                 },
             });
         }
         catch (error) {
-            this.log("Error refreshing account");
+            this.log('Error refreshing account');
             throw error;
         }
     }
     async budgets() {
         await this.ensureValidToken();
-        this.log("Fetching budgets...");
+        this.log('Fetching budgets...');
         try {
             const response = await axios_1.default.get(`${this.baseUrl}/api/context`, {
                 headers: this.getHeaders(),
@@ -249,7 +256,7 @@ class DasBudget {
             return response.data.items;
         }
         catch (error) {
-            this.log("Error fetching budgets");
+            this.log('Error fetching budgets');
             throw error;
         }
     }
