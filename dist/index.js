@@ -3,12 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FREE_TO_SPEND = void 0;
 const axios_1 = __importDefault(require("axios"));
-const crypto_1 = require("crypto");
+const crypto_1 = __importDefault(require("crypto"));
 const types_1 = require("./types");
-var types_2 = require("./types");
-Object.defineProperty(exports, "FREE_TO_SPEND", { enumerable: true, get: function () { return types_2.FREE_TO_SPEND; } });
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { version } = require('../package.json');
 class DasBudget {
     constructor(config) {
         this.accessToken = null;
@@ -71,6 +70,7 @@ class DasBudget {
             'X-Das-Platform': 'web',
             'X-Das-Build': '179',
             'X-Das-Version': '0.9.5',
+            'User-Agent': `klinquist/das-budget-sdk/${version}`,
         };
     }
     async initialize() {
@@ -226,19 +226,56 @@ class DasBudget {
             throw error;
         }
     }
-    async refresh(accountId, usePremium = false, options) {
+    /**
+     * Refreshes the data for a specific account.
+     *
+     * @param options - The refresh options
+     * @param options.itemId - The ID of the item to refresh (required)
+     * @param options.usePremium - Whether to use premium refresh credits (optional, defaults to false)
+     * @param options.budgetId - The ID of the budget to use (optional, defaults to the currently set budget)
+     *
+     * @throws {Error} If accountId is not provided
+     * @throws {Error} If the account refresh fails
+     *
+     * @example
+     * ```typescript
+     * // Basic usage
+     * await dasBudget.refresh({ itemId: "account-123" });
+     *
+     * // Using premium refresh
+     * await dasBudget.refresh({
+     *   itemId: "item-123",
+     *   usePremium: true,
+     *   budgetId: "budget-456"
+     * });
+     * ```
+     */
+    async refresh(options) {
+        if (!options?.itemId) {
+            throw new Error('itemId is required for refresh');
+        }
+        if (typeof options.itemId !== 'string' ||
+            options.itemId.trim() === '') {
+            throw new Error('itemId must be a non-empty string');
+        }
+        if (options.usePremium !== undefined &&
+            typeof options.usePremium !== 'boolean') {
+            throw new Error('usePremium must be a boolean if provided');
+        }
+        if (options.budgetId !== undefined &&
+            (typeof options.budgetId !== 'string' ||
+                options.budgetId.trim() === '')) {
+            throw new Error('budgetId must be a non-empty string if provided');
+        }
         await this.ensureValidToken();
-        this.log(`Refreshing account ${accountId}...`);
+        this.log(`Refreshing item ${options.itemId}...`);
         try {
-            await axios_1.default.post(`${this.baseUrl}/api/item/${accountId}/refresh`, {
-                use_premium: usePremium,
-                idempotency_key: (0, crypto_1.randomUUID)(),
+            await axios_1.default.post(`${this.baseUrl}/api/item/${options.itemId}/refresh`, {
+                use_premium: options.usePremium ?? false,
+                idempotency_key: crypto_1.default.randomUUID(),
                 user_initiated: true,
             }, {
-                headers: {
-                    ...this.getHeaders(options),
-                    'Content-Type': 'application/json',
-                },
+                headers: this.getHeaders(),
             });
         }
         catch (error) {
@@ -257,6 +294,20 @@ class DasBudget {
         }
         catch (error) {
             this.log('Error fetching budgets');
+            throw error;
+        }
+    }
+    async items(options) {
+        await this.ensureValidToken();
+        this.log('Fetching items...');
+        try {
+            const response = await axios_1.default.get(`${this.baseUrl}/api/item`, {
+                headers: this.getHeaders(options),
+            });
+            return response.data.items;
+        }
+        catch (error) {
+            this.log('Error fetching items');
             throw error;
         }
     }
