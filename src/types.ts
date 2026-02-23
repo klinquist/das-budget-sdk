@@ -5,9 +5,11 @@ export interface DasBudgetConfig {
 }
 
 export interface TokenResponse {
-    access_token: string;
-    expires_in: number;
-    user_id: string;
+    access_token?: string;
+    id_token?: string;
+    refresh_token?: string;
+    expires_in: number | string;
+    user_id?: string;
 }
 
 export interface AccountContext {

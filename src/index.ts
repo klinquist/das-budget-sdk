@@ -49,17 +49,40 @@ export default class DasBudget {
   private async refreshAccessToken(): Promise<void> {
     try {
       this.log("Refreshing access token...");
+      const params = new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: this.refreshToken,
+      });
       const response = await axios.post<TokenResponse>(
         `https://securetoken.googleapis.com/v1/token?key=${this.apiKey}`,
+        params.toString(),
         {
-          grant_type: "refresh_token",
-          refresh_token: this.refreshToken,
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Accept: "*/*",
+          },
         },
       );
 
-      this.accessToken = response.data.access_token;
-      this.tokenExpiry = Date.now() + response.data.expires_in * 1000;
-      this.userId = response.data.user_id;
+      const token = response.data.id_token ?? response.data.access_token;
+      const expiresInSeconds = Number(response.data.expires_in);
+
+      if (!token) {
+        throw new Error(
+          "Token refresh response did not include id_token or access_token",
+        );
+      }
+
+      if (!Number.isFinite(expiresInSeconds) || expiresInSeconds <= 0) {
+        throw new Error(
+          `Token refresh response has invalid expires_in: ${response.data.expires_in}`,
+        );
+      }
+
+      this.accessToken = token;
+      this.tokenExpiry = Date.now() + expiresInSeconds * 1000;
+      this.userId = response.data.user_id ?? this.userId;
+      this.refreshToken = response.data.refresh_token ?? this.refreshToken;
       this.log("Access token refreshed successfully");
     } catch (error) {
       this.log("Error refreshing access token");
