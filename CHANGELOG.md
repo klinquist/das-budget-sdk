@@ -1,3 +1,8 @@
+### 1.1.19
+
+-   Fixed Firebase token refresh compatibility by using `application/x-www-form-urlencoded` for `/v1/token`
+-   Updated token parsing to accept both `id_token` and `access_token` from refresh responses
+
 ### 1.1.9
 
 -   Included 'crypto' module to fix refresh error
