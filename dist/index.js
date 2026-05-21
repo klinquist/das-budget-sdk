@@ -3,12 +3,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.DasBudget = exports.BeaconBudget = void 0;
 const axios_1 = __importDefault(require("axios"));
 const crypto_1 = __importDefault(require("crypto"));
 const types_1 = require("./types");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version } = require("../package.json");
-class DasBudget {
+class BeaconBudget {
     constructor(config) {
         this.accessToken = null;
         this.tokenExpiry = null;
@@ -21,7 +22,7 @@ class DasBudget {
     }
     log(message) {
         if (this.debug) {
-            console.log(`[DasBudget SDK] ${message}`);
+            console.log(`[BeaconBudget SDK] ${message}`);
         }
     }
     async refreshAccessToken() {
@@ -85,7 +86,7 @@ class DasBudget {
             "X-Das-Platform": "web",
             "X-Das-Build": "216",
             "X-Das-Version": "0.12.0",
-            "User-Agent": `klinquist/das-budget-sdk/${version}`,
+            "User-Agent": `klinquist/beacon-budget-sdk/${version}`,
         };
     }
     async initialize() {
@@ -254,10 +255,10 @@ class DasBudget {
      * @example
      * ```typescript
      * // Basic usage
-     * await dasBudget.refresh({ itemId: "account-123" });
+     * await beaconBudget.refresh({ itemId: "account-123" });
      *
      * // Using premium refresh
-     * await dasBudget.refresh({
+     * await beaconBudget.refresh({
      *   itemId: "item-123",
      *   usePremium: true,
      *   budgetId: "budget-456"
@@ -324,4 +325,6 @@ class DasBudget {
         }
     }
 }
-exports.default = DasBudget;
+exports.BeaconBudget = BeaconBudget;
+exports.DasBudget = BeaconBudget;
+exports.default = BeaconBudget;

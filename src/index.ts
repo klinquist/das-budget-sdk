@@ -1,7 +1,7 @@
 import axios from "axios";
 import crypto from "crypto";
 import {
-  DasBudgetConfig,
+  BeaconBudgetConfig,
   TokenResponse,
   Account,
   Transaction,
@@ -21,10 +21,12 @@ import {
   ItemsResponse,
 } from "./types";
 
+export type { BeaconBudgetConfig, DasBudgetConfig } from "./types";
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version } = require("../package.json");
 
-export default class DasBudget {
+export class BeaconBudget {
   private refreshToken: string;
   private apiKey: string;
   private debug: boolean;
@@ -34,7 +36,7 @@ export default class DasBudget {
   private budgetId: string | null = null;
   private readonly baseUrl = "https://api.dasbudget.com";
 
-  constructor(config: DasBudgetConfig) {
+  constructor(config: BeaconBudgetConfig) {
     this.refreshToken = config.refreshToken;
     this.apiKey = config.apiKey;
     this.debug = config.debug || false;
@@ -42,7 +44,7 @@ export default class DasBudget {
 
   private log(message: string) {
     if (this.debug) {
-      console.log(`[DasBudget SDK] ${message}`);
+      console.log(`[BeaconBudget SDK] ${message}`);
     }
   }
 
@@ -123,7 +125,7 @@ export default class DasBudget {
       "X-Das-Platform": "web",
       "X-Das-Build": "216",
       "X-Das-Version": "0.12.0",
-      "User-Agent": `klinquist/das-budget-sdk/${version}`,
+      "User-Agent": `klinquist/beacon-budget-sdk/${version}`,
     };
   }
 
@@ -366,10 +368,10 @@ export default class DasBudget {
    * @example
    * ```typescript
    * // Basic usage
-   * await dasBudget.refresh({ itemId: "account-123" });
+   * await beaconBudget.refresh({ itemId: "account-123" });
    *
    * // Using premium refresh
-   * await dasBudget.refresh({
+   * await beaconBudget.refresh({
    *   itemId: "item-123",
    *   usePremium: true,
    *   budgetId: "budget-456"
@@ -458,3 +460,6 @@ export default class DasBudget {
     }
   }
 }
+
+export const DasBudget = BeaconBudget;
+export default BeaconBudget;

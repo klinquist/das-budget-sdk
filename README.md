@@ -1,18 +1,18 @@
-# DAS Budget SDK
+# Beacon Budget SDK
 
-An UNOFFICIAL TypeScript SDK for interacting with the DAS Budget API. I created this for one purpose: to assign transactions to buckets based on some advanced logic that is not supported by the DAS Budget App. If you'd like to see any additional features, please open an issue!
+An UNOFFICIAL TypeScript SDK for interacting with the Beacon Budget API. I created this for one purpose: to assign transactions to buckets based on some advanced logic that is not supported by the Beacon Budget app. If you'd like to see any additional features, please open an issue!
 
 ## Installation
 
 ```bash
-npm install das-budget-sdk
+npm install beacon-budget-sdk
 ```
 
 ## Usage
 
 ### Getting Your Refresh Token
 
-1. Log in to [DAS Budget](https://app.dasbudget.com)
+1. Log in to [Beacon Budget](https://app.dasbudget.com)
 2. Open your browser's developer tools (F12 or right-click -> Inspect)
 3. Go to the Console tab
 4. Paste this code to reveal the refresh token:
@@ -34,9 +34,9 @@ indexedDB.open("firebaseLocalStorageDb").onsuccess = function (event) {
 ### Writing Code
 
 ```typescript
-import { DasBudget, FREE_TO_SPEND } from "das-budget-sdk";
+import { BeaconBudget, FREE_TO_SPEND } from "beacon-budget-sdk";
 
-const client = new DasBudget({
+const client = new BeaconBudget({
   refreshToken: "your_refresh_token",
   apiKey: "AIzaSyAidm6Qvd5nsjdSSLmMdc-5RAWjIGv5a7I", //This is the API key the app uses
   debug: true, // Optional: enables debug logging
@@ -86,7 +86,7 @@ await client.refresh({
 
 // Or specify a different budget ID for this refresh
 await client.refresh({
-  accountId: "account_id",
+  itemId: "item_id",
   usePremium: true,
   budgetId: "other_budget_id",
 });
@@ -118,7 +118,7 @@ Here's an example of how to use the SDK to monitor transactions and automaticall
 
 ```javascript
 require("dotenv").config();
-const DasBudget = require("das-budget-sdk").default;
+const BeaconBudget = require("beacon-budget-sdk").default;
 
 const log = (message) => {
   const date = new Date();
@@ -139,7 +139,7 @@ const expenseMappings = [
 ];
 
 // Initialize the client
-const client = new DasBudget({
+const client = new BeaconBudget({
   refreshToken: process.env.REFRESH_TOKEN,
   apiKey: process.env.API_KEY,
   debug: false,
@@ -193,16 +193,16 @@ main().catch(console.error);
 
 ## API Reference
 
-### `DasBudget(config: DasBudgetConfig)`
+### `BeaconBudget(config: BeaconBudgetConfig)`
 
-Creates a new DAS Budget client instance.
+Creates a new Beacon Budget client instance.
 
 #### Configuration
 
 ```typescript
-interface DasBudgetConfig {
-  refreshToken: string; // Your DAS Budget refresh token
-  apiKey: string; // Your DAS Budget API key
+interface BeaconBudgetConfig {
+  refreshToken: string; // Your Beacon Budget refresh token
+  apiKey: string; // Your Beacon Budget API key
   debug?: boolean; // Optional: enables debug logging
 }
 ```
@@ -511,10 +511,13 @@ interface Account {
 A constant representing the Free to Spend bucket. Use this when assigning transactions to Free to Spend:
 
 ```typescript
-import { FREE_TO_SPEND } from "das-budget-sdk";
+import { FREE_TO_SPEND } from "beacon-budget-sdk";
 
 // Assign a transaction to Free to Spend
-await client.assignTransactionToBucket("transaction_id", FREE_TO_SPEND);
+await client.assignTransactionToBucket({
+  transactionId: "transaction_id",
+  bucketId: FREE_TO_SPEND,
+});
 ```
 
 ## Error Handling

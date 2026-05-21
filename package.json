@@ -1,7 +1,7 @@
 {
-    "name": "das-budget-sdk",
-    "version": "1.1.19",
-    "description": "An UNOFFICIAL TypeScript SDK for interacting with the DAS Budget API",
+    "name": "beacon-budget-sdk",
+    "version": "1.2.0",
+    "description": "An UNOFFICIAL TypeScript SDK for interacting with the Beacon Budget API",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
@@ -11,10 +11,10 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/klinquist/das-budget-sdk"
+        "url": "https://github.com/klinquist/beacon-budget-sdk"
     },
     "keywords": [
-        "das",
+        "beacon",
         "budget",
         "sdk",
         "api"

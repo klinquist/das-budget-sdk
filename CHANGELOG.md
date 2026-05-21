@@ -1,3 +1,10 @@
+### 1.2.0
+
+-   Rebranded the SDK package from `das-budget-sdk` to `beacon-budget-sdk`
+-   Added `BeaconBudget` as the primary client export
+-   Kept `DasBudget` and `DasBudgetConfig` aliases for backward compatibility
+-   Updated SDK logging and user-agent strings to Beacon Budget
+
 ### 1.1.19
 
 -   Fixed Firebase token refresh compatibility by using `application/x-www-form-urlencoded` for `/v1/token`

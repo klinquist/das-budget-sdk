@@ -1,8 +1,9 @@
-export interface DasBudgetConfig {
+export interface BeaconBudgetConfig {
     refreshToken: string;
     apiKey: string;
     debug?: boolean;
 }
+export type DasBudgetConfig = BeaconBudgetConfig;
 export interface TokenResponse {
     access_token?: string;
     id_token?: string;

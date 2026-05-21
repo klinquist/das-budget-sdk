@@ -1,8 +1,8 @@
-const DasBudget = require("../dist/index.js").default;
+const BeaconBudget = require("../dist/index.js").default;
 
 async function main() {
   try {
-    const db = new DasBudget({
+    const db = new BeaconBudget({
       refreshToken: "your_refresh_token",
       apiKey: process.env.API_KEY,
       debug: true,
@@ -24,7 +24,7 @@ async function main() {
 
     // Test getting accounts
     console.log("\nFetching accounts...");
-    const accounts = await db.getAccounts();
+    const accounts = await db.accounts();
     console.log("Accounts:", accounts);
   } catch (error) {
     console.error("Error:", error);

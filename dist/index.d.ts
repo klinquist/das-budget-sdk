@@ -1,5 +1,6 @@
-import { DasBudgetConfig, Account, Transaction, Bucket, RefreshesResponse, Budget, TransactionsOptions, AssignTransactionOptions, ApiOptions, RefreshOptions, AccountItem } from "./types";
-export default class DasBudget {
+import { BeaconBudgetConfig, Account, Transaction, Bucket, RefreshesResponse, Budget, TransactionsOptions, AssignTransactionOptions, ApiOptions, RefreshOptions, AccountItem } from "./types";
+export type { BeaconBudgetConfig, DasBudgetConfig } from "./types";
+export declare class BeaconBudget {
     private refreshToken;
     private apiKey;
     private debug;
@@ -8,7 +9,7 @@ export default class DasBudget {
     private userId;
     private budgetId;
     private readonly baseUrl;
-    constructor(config: DasBudgetConfig);
+    constructor(config: BeaconBudgetConfig);
     private log;
     private refreshAccessToken;
     private ensureValidToken;
@@ -42,10 +43,10 @@ export default class DasBudget {
      * @example
      * ```typescript
      * // Basic usage
-     * await dasBudget.refresh({ itemId: "account-123" });
+     * await beaconBudget.refresh({ itemId: "account-123" });
      *
      * // Using premium refresh
-     * await dasBudget.refresh({
+     * await beaconBudget.refresh({
      *   itemId: "item-123",
      *   usePremium: true,
      *   budgetId: "budget-456"
@@ -56,3 +57,5 @@ export default class DasBudget {
     budgets(): Promise<Budget[]>;
     items(options?: ApiOptions): Promise<AccountItem[]>;
 }
+export declare const DasBudget: typeof BeaconBudget;
+export default BeaconBudget;
